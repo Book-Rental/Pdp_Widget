@@ -1,3 +1,5 @@
+import { Rb_Rating } from "rentbook-ui-lib";
+
 const BookInfo = () => {
   return (
     <div className="w-full min-h-[600px] border border-gray-300 rounded-lg p-6">
@@ -6,6 +8,7 @@ const BookInfo = () => {
       <p className="mt-4 text-gray-500">
         Book details will come here...
       </p>
+      <Rb_Rating value={5} ></Rb_Rating>
     </div>
   );
 };
