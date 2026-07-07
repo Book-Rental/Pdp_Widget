@@ -1,0 +1,14 @@
+/* .thumb-prev,
+.thumb-next {
+  transition: 0.2s;
+}
+
+.thumb-prev:hover,
+.thumb-next:hover {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.swiper-button-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+} */
