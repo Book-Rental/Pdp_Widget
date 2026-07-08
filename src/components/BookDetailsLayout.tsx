@@ -4,6 +4,7 @@ import BookInfo from "./BookInfo";
 import BookDescription from "./BookDescription";
 import BookReviews from "./BookReviews";
 import { useParams } from "react-router-dom";
+import { useEffect } from "react";
 
 const BookDetailsLayout = () => {
   const { id } = useParams();
@@ -11,7 +12,12 @@ const BookDetailsLayout = () => {
     return <div>Book ID not found.</div>;
   }
   const { data, isLoading, isError } = useBook(id);
-
+  useEffect(() => {
+    const event = new CustomEvent("widget-loading-status", {
+      detail: isLoading
+    });
+    window.dispatchEvent(event);
+  }, [isLoading]);
   if (isLoading) return <div>Loading...</div>;
   if (isError || !data) return <div>Unable to load book.</div>;
 
