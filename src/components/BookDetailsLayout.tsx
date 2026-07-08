@@ -3,11 +3,12 @@ import BookGallery from "./BookGallery";
 import BookInfo from "./BookInfo";
 import BookDescription from "./BookDescription";
 import BookReviews from "./BookReviews";
-import { useParams } from "react-router-dom";
+
 import { useEffect } from "react";
 
 const BookDetailsLayout = () => {
-  const { id } = useParams();
+  const searchParams = new URLSearchParams(window.location.search); 
+  const id = searchParams.get("bookId");
   if (!id) {
     return <div>Book ID not found.</div>;
   }
@@ -18,8 +19,13 @@ const BookDetailsLayout = () => {
     });
     window.dispatchEvent(event);
   }, [isLoading]);
-  if (isLoading) return <div>Loading...</div>;
-  if (isError || !data) return <div>Unable to load book.</div>;
+
+  if (isLoading)
+    return
+  <div>Loading......</div>;
+  if (isError || !data)
+    return
+  <div>Unable to load book.</div>;
 
   const book = data.data;
 
