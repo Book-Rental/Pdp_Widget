@@ -10,11 +10,32 @@ export const BOOK_CONSTANTS = {
         AVAILABILITY: "Availability",
         RENTAL_DURATION: "Select Rental Duration",
         REFUNDABLE: "(Refundable)",
+        PURCHASE_PRICE: "Purchase Price",
+        CONDITION: "Condition",
+    },
+
+    TABS: {
+        RENT: "Rent",
+        BUY: "Buy",
     },
 
     BUTTONS: {
         ADD_TO_CART: "Add To Cart",
         ADD_TO_WISHLIST: "Add to Wishlist",
+    },
+
+    DETAILS: {
+        ABOUT_BOOK: "About this Book",
+        BOOK_DETAILS: "Book Details",
+        PUBLISHER: "Publisher",
+        LANGUAGE: "Language",
+        PUBLISHED: "Published",
+        PAGES: "Pages",
+        GENRE: "Genre",
+        AUTHOR: "Author",
+        ISBN: "ISBN",
+        EDITION: "Edition",
+        NOT_AVAILABLE: "N/A",
     },
 
     RENTAL_OPTIONS: [
