@@ -7,7 +7,7 @@ import BookReviews from "./BookReviews";
 import { useEffect } from "react";
 
 const BookDetailsLayout = () => {
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(window.location.search); 
   const id = searchParams.get("bookId");
   if (!id) {
     return <div>Book ID not found.</div>;
@@ -22,7 +22,7 @@ const BookDetailsLayout = () => {
 
   if (isLoading)
     return
-  <div>Loading...</div>;
+  <div>Loading......</div>;
   if (isError || !data)
     return
   <div>Unable to load book.</div>;
