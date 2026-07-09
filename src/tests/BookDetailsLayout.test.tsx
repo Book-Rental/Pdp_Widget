@@ -1,121 +1,119 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import BookDetailsLayout from "../components/BookDetailsLayout";
 
-// Mock useParams
-vi.mock("react-router-dom", () => ({
-    useParams: vi.fn(),
-}));
-
-// Mock useBook
 vi.mock("../hook/useBook", () => ({
-    useBook: vi.fn(),
+  useBook: vi.fn(),
 }));
 
-// Mock child components
 vi.mock("../components/BookGallery", () => ({
-    default: () => <div>BookGallery</div>,
+  default: () => <div>BookGallery</div>,
 }));
 
 vi.mock("../components/BookInfo", () => ({
-    default: () => <div>BookInfo</div>,
+  default: () => <div>BookInfo</div>,
 }));
 
 vi.mock("../components/BookDescription", () => ({
-    default: () => <div>BookDescription</div>,
+  default: () => <div>BookDescription</div>,
 }));
 
 vi.mock("../components/BookReviews", () => ({
-    default: () => <div>BookReviews</div>,
+  default: () => <div>BookReviews</div>,
 }));
 
-import { useParams } from "react-router-dom";
 import { useBook } from "../hook/useBook";
 
 const mockBook = {
-    _id: "1",
-    listingType: "Rent",
-    status: "Available",
-    condition: "New",
-    purchasePrice: 500,
-    availableForSale: true,
-    availableForRent: true,
-    name: "Harry Potter",
-    description: "Description",
-    language: "English",
-    author: "J.K. Rowling",
-    edition: "1st Edition",
-    coverImage: "cover.jpg",
-    rentalPricePerDay: 20,
-    rentalPricePerWeek: 100,
-    rentalPricePerMonth: 300,
-    securityDeposit: 500,
-    numberOfPages: 350,
-    availabilityStatus: "Available",
-    images: [],
+  _id: "1",
+  listingType: "Rent",
+  status: "Available",
+  condition: "New",
+  purchasePrice: 500,
+  availableForSale: true,
+  availableForRent: true,
+  name: "Harry Potter",
+  description: "Description",
+  language: "English",
+  author: "J.K. Rowling",
+  edition: "1st Edition",
+  coverImage: "cover.jpg",
+  rentalPricePerDay: 20,
+  rentalPricePerWeek: 100,
+  rentalPricePerMonth: 300,
+  securityDeposit: 500,
+  numberOfPages: 350,
+  availabilityStatus: "Available",
+  images: [],
 };
 
 describe("BookDetailsLayout", () => {
-    it("shows Book ID not found", () => {
-        vi.mocked(useParams).mockReturnValue({});
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-        vi.mocked(useBook).mockReturnValue({
-            data: undefined,
-            isLoading: false,
-            isError: false,
-        } as never);
+  it("shows Book ID not found", () => {
+    window.history.pushState({}, "", "/");
 
-        render(<BookDetailsLayout />);
+    vi.mocked(useBook).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+    } as never);
 
-        expect(screen.getByText("Book ID not found.")).toBeInTheDocument();
-    });
+    render(<BookDetailsLayout />);
 
-    it("shows loading state", () => {
-        vi.mocked(useParams).mockReturnValue({ id: "1" });
+    expect(screen.getByText("Book ID not found.")).toBeInTheDocument();
+  });
 
-        vi.mocked(useBook).mockReturnValue({
-            data: undefined,
-            isLoading: true,
-            isError: false,
-        } as never);
+  it("shows loading state", () => {
+    window.history.pushState({}, "", "/?bookId=1");
 
-        render(<BookDetailsLayout />);
+    vi.mocked(useBook).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    } as never);
 
-        expect(
-            screen.getByText("Loading book details...")
-        ).toBeInTheDocument();
-    });
+    render(<BookDetailsLayout />);
 
-    it("shows error state", () => {
-        vi.mocked(useParams).mockReturnValue({ id: "1" });
+    expect(
+      screen.getByText("Loading book details...")
+    ).toBeInTheDocument();
+  });
 
-        vi.mocked(useBook).mockReturnValue({
-            data: undefined,
-            isLoading: false,
-            isError: true,
-        } as never);
+  it("shows error state", () => {
+    window.history.pushState({}, "", "/?bookId=1");
 
-        render(<BookDetailsLayout />);
+    vi.mocked(useBook).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as never);
 
-        expect(screen.getByText("Unable to load book.")).toBeInTheDocument();
-    });
+    render(<BookDetailsLayout />);
 
-    it("renders all child components", () => {
-        vi.mocked(useParams).mockReturnValue({ id: "1" });
+    expect(
+      screen.getByText("Unable to load book.")
+    ).toBeInTheDocument();
+  });
 
-        vi.mocked(useBook).mockReturnValue({
-            data: {
-                data: mockBook,
-            },
-            isLoading: false,
-            isError: false,
-        } as never);
+  it("renders all child components", () => {
+    window.history.pushState({}, "", "/?bookId=1");
 
-        render(<BookDetailsLayout />);
+    vi.mocked(useBook).mockReturnValue({
+      data: {
+        data: mockBook,
+      },
+      isLoading: false,
+      isError: false,
+    } as never);
 
-        expect(screen.getByText("BookGallery")).toBeInTheDocument();
-        expect(screen.getByText("BookInfo")).toBeInTheDocument();
-        expect(screen.getByText("BookDescription")).toBeInTheDocument();
-        expect(screen.getByText("BookReviews")).toBeInTheDocument();
-    });
+    render(<BookDetailsLayout />);
+
+    expect(screen.getByText("BookGallery")).toBeInTheDocument();
+    expect(screen.getByText("BookInfo")).toBeInTheDocument();
+    expect(screen.getByText("BookDescription")).toBeInTheDocument();
+    expect(screen.getByText("BookReviews")).toBeInTheDocument();
+  });
 });
