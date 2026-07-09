@@ -8,27 +8,37 @@ import "./ThumbnailCarousel.css";
 
 interface ThumbnailCarouselProps {
     images: string[];
-    selectedImage: string;
-    onSelectImage: (image: string) => void;
+    selectedIndex: number;
+    onSelectImage: (index: number) => void;
 }
 
 const ThumbnailCarousel = ({
     images,
-    selectedImage,
+    selectedIndex,
     onSelectImage,
 }: ThumbnailCarouselProps) => {
+    const showNavigation = images.length > 4;
+    console.log("Images count:", images.length);
+    console.log("Images:", images);
+    console.log("Show Navigation:", showNavigation);
     return (
         <div className="relative mt-5">
-            <button className="thumb-prev absolute left-[-14px] top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow border hover:bg-gray-100">
-                <ChevronLeft size={18} />
-            </button>
-
+            {showNavigation && (
+                <button className="thumb-prev absolute left-[-14px] top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 border border-gray-100 shadow-md hover:bg-gray-100">
+                    <ChevronLeft size={18} className="text-gray-600" />
+                </button>
+            )}
             <Swiper
                 modules={[Navigation]}
-                navigation={{
-                    prevEl: ".thumb-prev",
-                    nextEl: ".thumb-next",
-                }}
+
+                navigation={
+                    showNavigation
+                        ? {
+                            prevEl: ".thumb-prev",
+                            nextEl: ".thumb-next",
+                        }
+                        : false
+                }
                 spaceBetween={10}
                 slidesPerView={4}
                 watchSlidesProgress
@@ -37,8 +47,8 @@ const ThumbnailCarousel = ({
                     <SwiperSlide key={index}>
                         <button
                             type="button"
-                            onClick={() => onSelectImage(image)}
-                            className={`h-20 w-full overflow-hidden rounded-lg border-2 bg-white transition-all duration-200 ${selectedImage === image
+                            onClick={() => onSelectImage(index)}
+                            className={`h-20 w-full overflow-hidden rounded-lg border-2 bg-white transition-all duration-200 ${selectedIndex === index
                                 ? "border-blue-600"
                                 : "border-gray-200 hover:border-gray-400"
                                 }`}
@@ -52,11 +62,13 @@ const ThumbnailCarousel = ({
                     </SwiperSlide>
                 ))}
             </Swiper>
-
-            <button className="thumb-next absolute right-[-14px] top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow border hover:bg-gray-100">
-                <ChevronRight size={18} />
-            </button>
+            {showNavigation && (
+                <button className="thumb-next absolute right-[-14px] top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 border border-gray-100 shadow-md hover:bg-gray-100">
+                    <ChevronRight size={18} />
+                </button>
+            )}
         </div>
+
     );
 };
 
