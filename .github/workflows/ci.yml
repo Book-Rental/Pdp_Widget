@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    name: Build Authentication Widget
+    name: Build PDP Widget
     runs-on: ubuntu-latest
 
     strategy:
