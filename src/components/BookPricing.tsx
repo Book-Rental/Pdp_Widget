@@ -31,8 +31,8 @@ const BookPricing = ({ book }: BookInfoProps) => {
                     <button
                         onClick={() => setMode("rent")}
                         className={`pb-2.5 -mb-px text-[15px] border-b-2 ${mode === "rent"
-                            ? "font-medium text-black border-blue-600"
-                            : "font-normal text-gray-400 border-transparent"
+                            ? "font-medium text-blue-600 border-blue-600"
+                            : "font-normal text-black border-transparent"
                             }`}
                     >
                         {BOOK_CONSTANTS.TABS.RENT}
@@ -41,8 +41,8 @@ const BookPricing = ({ book }: BookInfoProps) => {
                     <button
                         onClick={() => setMode("buy")}
                         className={`pb-2.5 -mb-px text-[15px] border-b-2 ${mode === "buy"
-                            ? "font-medium text-black border-blue-600"
-                            : "font-normal text-gray-400 border-transparent"
+                            ? "font-medium text-blue-600 border-blue-600"
+                            : "font-normal text-black border-transparent"
                             }`}
                     >
                         {BOOK_CONSTANTS.TABS.BUY}

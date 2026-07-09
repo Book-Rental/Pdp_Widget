@@ -3,29 +3,21 @@ import BookGallery from "./BookGallery";
 import BookInfo from "./BookInfo";
 import BookDescription from "./BookDescription";
 import BookReviews from "./BookReviews";
-
-import { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { Rb_LoadingSpinner } from "rentbook-ui-lib";
 
 const BookDetailsLayout = () => {
-  const searchParams = new URLSearchParams(window.location.search); 
-  const id = searchParams.get("bookId");
+  const { id } = useParams();
+  const { data, isLoading, isError } = useBook(id ?? "");
+
   if (!id) {
     return <div>Book ID not found.</div>;
   }
-  const { data, isLoading, isError } = useBook(id);
-  useEffect(() => {
-    const event = new CustomEvent("widget-loading-status", {
-      detail: isLoading
-    });
-    window.dispatchEvent(event);
-  }, [isLoading]);
 
-  if (isLoading)
-    return
-  <div>Loading......</div>;
-  if (isError || !data)
-    return
-  <div>Unable to load book.</div>;
+  if (isLoading) {
+    return <Rb_LoadingSpinner text="Loading book details..." />;
+  }
+  if (isError || !data) return <div>Unable to load book.</div>;
 
   const book = data.data;
 
