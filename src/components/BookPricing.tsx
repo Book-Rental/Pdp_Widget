@@ -1,12 +1,8 @@
 import { useState } from "react";
-import {
-    Rb_Button,
-    Rb_Text,
-    Rb_Icon,
-} from "rentbook-ui-lib";
 import { FaShoppingCart } from "react-icons/fa";
 import { BOOK_CONSTANTS } from "../constants/bookConstants";
 import { BookInfoProps } from "../types/book";
+import { Rb_Button, Rb_Icon, Rb_Text } from "@rentbook/rentbook-ui-lib";
 
 const BookPricing = ({ book }: BookInfoProps) => {
     const defaultRental = BOOK_CONSTANTS.RENTAL_OPTIONS.findIndex(

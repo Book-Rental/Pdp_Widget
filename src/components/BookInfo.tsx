@@ -1,9 +1,9 @@
-import { Rb_Rating, Rb_Text, Rb_Icon } from "rentbook-ui-lib";
 import { FaGlobe, FaFileAlt } from "react-icons/fa";
 import { FiBookOpen } from "react-icons/fi";
 import { BookInfoProps } from "../types/book";
 import { BOOK_CONSTANTS } from "../constants/bookConstants";
 import BookPricing from "./BookPricing";
+import { Rb_Icon, Rb_Rating, Rb_Text } from "@rentbook/rentbook-ui-lib";
 
 const BookInfo = ({ book }: BookInfoProps) => {
   return (

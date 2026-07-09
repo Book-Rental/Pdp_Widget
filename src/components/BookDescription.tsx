@@ -1,6 +1,6 @@
-import { Rb_Text } from "rentbook-ui-lib";
 import { BookDescriptionProps } from "../types/book";
 import { BOOK_CONSTANTS } from "../constants/bookConstants";
+import { Rb_Text } from "@rentbook/rentbook-ui-lib";
 
 const BookDescription = ({ book }: BookDescriptionProps) => {
     return (

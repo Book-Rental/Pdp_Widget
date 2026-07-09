@@ -1,4 +1,4 @@
-import { Rb_Button, Rb_Rating, Rb_Text } from "rentbook-ui-lib";
+import { Rb_Text, Rb_Button, Rb_Rating } from "@rentbook/rentbook-ui-lib";
 import { FaStar } from "react-icons/fa";
 
 const ratingDistribution = [

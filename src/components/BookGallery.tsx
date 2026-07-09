@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import ThumbnailCarousel from "./ThumbnailCarousel";
 import { BookInfoProps } from "../types/book";
-import { Rb_Image } from "rentbook-ui-lib";
-
+import { Rb_Image } from "@rentbook/rentbook-ui-lib";
 
 const BookGallery = ({ book }: BookInfoProps) => {
 
