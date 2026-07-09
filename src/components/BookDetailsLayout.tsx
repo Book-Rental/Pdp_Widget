@@ -4,15 +4,19 @@ import BookInfo from "./BookInfo";
 import BookDescription from "./BookDescription";
 import BookReviews from "./BookReviews";
 import { useParams } from "react-router-dom";
+import { Rb_LoadingSpinner } from "rentbook-ui-lib";
 
 const BookDetailsLayout = () => {
   const { id } = useParams();
+  const { data, isLoading, isError } = useBook(id ?? "");
+
   if (!id) {
     return <div>Book ID not found.</div>;
   }
-  const { data, isLoading, isError } = useBook(id);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return <Rb_LoadingSpinner text="Loading book details..." />;
+  }
   if (isError || !data) return <div>Unable to load book.</div>;
 
   const book = data.data;

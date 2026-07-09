@@ -5,12 +5,12 @@ export interface BookImage {
 }
 
 export interface Book {
-  listingType: any;
-  status: any;
-  condition: any;
-  purchasePrice: any;
-  availableForSale: any;
-  availableForRent: any;
+  listingType: string;
+  status: string;
+  condition: string;
+  purchasePrice: number;
+  availableForSale: boolean;
+  availableForRent: boolean;
   _id: string;
   name: string;
   description: string;

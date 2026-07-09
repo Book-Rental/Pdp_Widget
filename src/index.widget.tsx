@@ -1,12 +1,12 @@
-import { createRoot, Root as ReactRoot } from "react-dom/client";
-import "rentbook-ui-lib/microfrontend.min.css";
-import "./index.css";
-import App from "./App";
-export interface WidgetOptions {
-  containerElementId: string;
-  name?: string;
-}
+import React from 'react';
+import { createRoot, Root as ReactRoot } from 'react-dom/client';
+import App from './App';
+import './index.css'
 
+export interface WidgetOptions {
+  containerElementId: string,
+  name: string;
+}
 declare global {
   interface Window {
     renderReactWidget: (config: string) => void;
@@ -17,17 +17,13 @@ declare global {
 const widgetRoots: Record<string, ReactRoot> = {};
 
 
-function Root({ options }: { options: WidgetOptions }) {
-    console.log("options",options)
-  return <App />;
-
-}
-
 const getOptionsFromDataAttributes = (
   el: HTMLElement
-): Partial<WidgetOptions> => ({
-  name: el.getAttribute("data-name") || "",
-});
+): Partial<WidgetOptions> => {
+  return {
+    name: el.getAttribute('data-name') || '',
+  };
+};
 
 window.renderReactWidget = (config: string) => {
   let parsedOptions: Partial<WidgetOptions> = {};
@@ -35,39 +31,44 @@ window.renderReactWidget = (config: string) => {
   try {
     parsedOptions = JSON.parse(config);
   } catch {
-    console.warn("Invalid config JSON. Falling back to data-* attributes.");
+    console.warn('Invalid JSON config,using data attributes');
   }
-
-  const containerId =
-    parsedOptions.containerElementId || config;
-
+  const containerId = parsedOptions.containerElementId || config;
   const container = document.getElementById(containerId);
 
   if (!container) {
-    console.error(`Container "${containerId}" not found`);
+    console.error(`Container "${containerId}"not found`);
     return;
   }
 
+  const dataOptions = getOptionsFromDataAttributes(container);
+
   const finalOptions: WidgetOptions = {
-    ...getOptionsFromDataAttributes(container),
+    ...dataOptions,
     ...parsedOptions,
     containerElementId: containerId,
-  };
+  } as WidgetOptions;
 
+  if (!finalOptions.name) {
+    console.error('Missing required field:name');
+    return;
+  }
   if (widgetRoots[containerId]) {
     widgetRoots[containerId].unmount();
   }
-
   const root = createRoot(container);
-
   root.render(
-    <Root options={finalOptions} />
-  );
-
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  )
   widgetRoots[containerId] = root;
-};
 
-window.unmountReactWidget = (containerId: string) => {
-  widgetRoots[containerId]?.unmount();
-  delete widgetRoots[containerId];
-};
+  window.unmountReactWidget = (containerElementId: string) => {
+    const root = widgetRoots[containerElementId];
+    if (root) {
+      root.unmount();
+      delete widgetRoots[containerElementId];
+    }
+  }
+}

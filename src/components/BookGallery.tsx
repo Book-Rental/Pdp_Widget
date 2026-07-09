@@ -9,6 +9,7 @@ const BookGallery = ({ book }: BookInfoProps) => {
   const [selectedImage, setSelectedImage] = useState("");
   const images = [
     book?.coverImage,
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     ...(book?.images?.map((img: any) => img.url) || []),
   ].filter(Boolean) as string[];
 
