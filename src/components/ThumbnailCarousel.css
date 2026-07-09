@@ -1,4 +1,4 @@
-/* .thumb-prev,
+.thumb-prev,
 .thumb-next {
   transition: 0.2s;
 }
@@ -11,4 +11,4 @@
 .swiper-button-disabled {
   opacity: 0.35;
   pointer-events: none;
-} */
+}
