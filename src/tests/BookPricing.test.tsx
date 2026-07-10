@@ -81,4 +81,41 @@ describe("BookPricing", () => {
 
     expect(screen.getByText("₹500")).toBeInTheDocument();
   });
+  it("renders only buy section when renting is unavailable", () => {
+    render(
+      <BookPricing
+        book={{
+          ...mockBook,
+          availableForRent: false,
+          availableForSale: true,
+        }}
+      />
+    );
+
+    expect(screen.getByText("Purchase Price")).toBeInTheDocument();
+    expect(screen.queryByText("Rental Price")).not.toBeInTheDocument();
+  });
+
+  it("renders only rent section when sale is unavailable", () => {
+    render(
+      <BookPricing
+        book={{
+          ...mockBook,
+          availableForRent: true,
+          availableForSale: false,
+        }}
+      />
+    );
+
+    expect(screen.getByText("Rental Price")).toBeInTheDocument();
+    expect(screen.queryByText("Purchase Price")).not.toBeInTheDocument();
+  });
+  it("switches back to rent mode", () => {
+    render(<BookPricing book={mockBook} />);
+
+    fireEvent.click(screen.getByText("Buy"));
+    fireEvent.click(screen.getByText("Rent"));
+
+    expect(screen.getByText("Rental Price")).toBeInTheDocument();
+  });
 });
