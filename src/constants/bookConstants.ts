@@ -1,3 +1,5 @@
+type RentalPeriod = "day" | "week" | "month";
+
 type RentalField =
     | "rentalPricePerDay"
     | "rentalPricePerWeek"
@@ -41,16 +43,19 @@ export const BOOK_CONSTANTS = {
     RENTAL_OPTIONS: [
         {
             label: "1 Days",
+            value: "day" as RentalPeriod,
             field: "rentalPricePerDay" as RentalField,
             variant: "outline",
         },
         {
             label: "7 Days",
+            value: "week" as RentalPeriod,
             field: "rentalPricePerWeek" as RentalField,
             variant: "primary",
         },
         {
             label: "30 Days",
+            value: "month" as RentalPeriod,
             field: "rentalPricePerMonth" as RentalField,
             variant: "outline",
         },

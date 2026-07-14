@@ -18,9 +18,6 @@ const ThumbnailCarousel = ({
     onSelectImage,
 }: ThumbnailCarouselProps) => {
     const showNavigation = images.length > 4;
-    console.log("Images count:", images.length);
-    console.log("Images:", images);
-    console.log("Show Navigation:", showNavigation);
     return (
         <div className="relative mt-5">
             {showNavigation && (

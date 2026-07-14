@@ -7,9 +7,10 @@ import { useEffect } from "react";
 import { Rb_LoadingSpinner } from "@rentbook/rentbook-ui-lib";
 
 const BookDetailsLayout = () => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const id = searchParams.get("bookId");
-    const { data, isLoading, isError } = useBook(id ?? "");
+    // const searchParams = new URLSearchParams(window.location.search);
+    // const id = searchParams.get("bookId");
+    const BOOK_ID = "6a4cf30f8fa028f067aee558";
+    const { data, isLoading, isError } = useBook(BOOK_ID);
 
     useEffect(() => {
         const event = new CustomEvent("widget-loading-status", {
@@ -18,9 +19,9 @@ const BookDetailsLayout = () => {
         window.dispatchEvent(event);
     }, [isLoading]);
 
-    if (!id) {
-        return <div>Book ID not found.</div>;
-    }
+    // if (!id) {
+    //     return <div>Book ID not found.</div>;
+    // }
     
     if (isLoading) {
         return <Rb_LoadingSpinner text="Loading book details..." />;
