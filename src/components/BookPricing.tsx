@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaShoppingCart } from "react-icons/fa";
 import { BOOK_CONSTANTS } from "../constants/bookConstants";
 import { BookInfoProps } from "../types/book";
-import { Rb_Button, Rb_Icon, Rb_Text } from "@rentbook/rentbook-ui-lib";
+import { Rb_Button, Rb_Icon, Rb_Text, } from "@rentbook/rentbook-ui-lib";
+import { addToCart } from "../services/cartService";
+import WishlistModal from "./WishlistModal";
+import { useWishlistNames } from "../hook/useWishlistNames";
+import { useWishlistMutations } from "../hook/useWishlistMutations";
 
 const BookPricing = ({ book }: BookInfoProps) => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+    const [isWishlisted, setIsWishlisted] = useState(false);
+    const [wishlistId, setWishlistId] = useState("");
+
     const defaultRental = BOOK_CONSTANTS.RENTAL_OPTIONS.findIndex(
         (item) => item.variant === "primary"
     );
@@ -13,16 +23,103 @@ const BookPricing = ({ book }: BookInfoProps) => {
         defaultRental >= 0 ? defaultRental : 0
     );
 
-    const [mode, setMode] = useState<"rent" | "buy">(
-        book.availableForRent ? "rent" : "buy"
-    );
+    // const [mode, setMode] = useState<"rent" | "buy">(
+    //     book.availableForRent ? "rent" : "buy"
+    // );
+    const mode = "rent" as const;
 
     const activeRental =
         BOOK_CONSTANTS.RENTAL_OPTIONS[selectedRental];
 
+    const { data } = useWishlistNames(user._id, true);
+
+    const { removeBookMutation } =
+        useWishlistMutations(user._id);
+
+    useEffect(() => {
+        if (!data?.data) return;
+
+        let found = false;
+
+        for (const wishlist of data.data) {
+            const exists = wishlist.books?.some(
+                // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+                (item: any) => item.bookId === book._id
+            );
+
+            if (exists) {
+                found = true;
+                setWishlistId(wishlist._id);
+                break;
+            }
+        }
+
+        setIsWishlisted(found);
+    }, [data, book._id]);
+
+    const showToast = (
+        message: string,
+        type: "success" | "error"
+    ) => {
+        window.dispatchEvent(
+            new CustomEvent("app-toast-notification", {
+                detail: {
+                    message,
+                    type,
+                },
+            })
+        );
+    };
+
+    const handleAddToCart = async () => {
+        try {
+            await addToCart({
+                bookId: book._id,
+                quantity: 1,
+                pricingMode: mode,
+                rentalPeriod:
+                    mode === "rent"
+                        ? activeRental.value
+                        : undefined,
+            });
+
+            showToast("Item added to cart", "success");
+        } catch (error) {
+            showToast(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to add item",
+                "error"
+            );
+        }
+    };
+
+    const handleRemoveWishlist = async () => {
+        try {
+            await removeBookMutation.mutateAsync({
+                wishlistId,
+                bookId: book._id,
+            });
+
+            showToast(
+                "Book removed from wishlist",
+                "success"
+            );
+
+            setIsWishlisted(false);
+        } catch (error) {
+            showToast(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to remove from wishlist",
+                "error"
+            );
+        }
+    };
+
     return (
         <>
-            {book.availableForRent && book.availableForSale && (
+            {/* {book.availableForRent && book.availableForSale && (
                 <div className="flex gap-5 border-gray-200 mb-6">
                     <button
                         onClick={() => setMode("rent")}
@@ -44,7 +141,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
                         {BOOK_CONSTANTS.TABS.BUY}
                     </button>
                 </div>
-            )}
+            )} */}
 
             {mode === "rent" && book.availableForRent && (
                 <>
@@ -155,7 +252,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
                 </>
             )}
 
-            {mode === "buy" && book.availableForSale && (
+            {/* {mode === "buy" && book.availableForSale && (
                 <>
                     <div className="grid sm:grid-cols-2 gap-6">
                         <div>
@@ -201,10 +298,13 @@ const BookPricing = ({ book }: BookInfoProps) => {
                         </Rb_Text>
                     </div>
                 </>
-            )}
+            )} */}
 
             <div className="flex flex-col sm:flex-row gap-3 mt-6">
-                <Rb_Button className="w-full flex sm:flex-1 h-11 rounded-lg bg-blue-600 text-white">
+                <Rb_Button
+                    onClick={handleAddToCart}
+                    className="w-full flex sm:flex-1 h-11 rounded-lg bg-blue-600 text-white"
+                >
                     <Rb_Icon
                         icon={FaShoppingCart}
                         size={16}
@@ -216,11 +316,29 @@ const BookPricing = ({ book }: BookInfoProps) => {
 
                 <Rb_Button
                     variant="outline"
+                    onClick={() => {
+                        if (isWishlisted) {
+                            handleRemoveWishlist();
+                        } else {
+                            setIsWishlistOpen(true);
+                        }
+                    }}
                     className="w-full sm:flex-1 h-11 rounded-lg !text-black !border-black"
                 >
-                    {BOOK_CONSTANTS.BUTTONS.ADD_TO_WISHLIST}
+                    {isWishlisted
+                        ? "Remove from Wishlist"
+                        : BOOK_CONSTANTS.BUTTONS.ADD_TO_WISHLIST}
                 </Rb_Button>
             </div>
+
+            <WishlistModal
+                isOpen={isWishlistOpen}
+                onClose={() => {
+                    setIsWishlistOpen(false);
+                }}
+                book={book}
+                userId={user._id}
+            />
         </>
     );
 };
