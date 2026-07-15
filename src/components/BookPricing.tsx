@@ -26,7 +26,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
     // const [mode, setMode] = useState<"rent" | "buy">(
     //     book.availableForRent ? "rent" : "buy"
     // );
-    const mode: "rent" = "rent";
+    const mode = "rent" as const;
 
     const activeRental =
         BOOK_CONSTANTS.RENTAL_OPTIONS[selectedRental];
@@ -43,6 +43,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
 
         for (const wishlist of data.data) {
             const exists = wishlist.books?.some(
+                // eslint-disable-next-line  @typescript-eslint/no-explicit-any
                 (item: any) => item.bookId === book._id
             );
 

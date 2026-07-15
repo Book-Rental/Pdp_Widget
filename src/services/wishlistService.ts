@@ -20,6 +20,7 @@ export const getWishlistNames = async (
 
     return {
         ...result,
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
         data: result.data.map((item: any) => ({
             _id: item.wishlistId,
             name: item.wishlistName,

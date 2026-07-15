@@ -32,12 +32,27 @@ const WishlistModal = ({
     const [newWishlist, setNewWishlist] = useState("");
 
     useEffect(() => {
-        if (!isOpen) {
-            setSelectedWishlist("");
-            setNewWishlist("");
-            setIsCreating(false);
+        if (
+            isOpen &&
+            data?.data?.length &&
+            !selectedWishlist
+        ) {
+            setSelectedWishlist(data.data[0]._id);
         }
-    }, [isOpen]);
+    }, [isOpen, data, selectedWishlist]);
+
+    useEffect(() => {
+        if (!isOpen || !data) return;
+
+        if (data.data.length === 0) {
+            setIsCreating(true);
+            setSelectedWishlist("");
+            return;
+        }
+
+        setIsCreating(false);
+        setSelectedWishlist(data.data[0]._id);
+    }, [isOpen, data]);
 
     const showToast = (
         message: string,
@@ -58,15 +73,10 @@ const WishlistModal = ({
         wishlistName: string
     ) => {
         try {
-            console.log("Before API");
-
             await addBookMutation.mutateAsync({
                 wishlistId,
                 bookId: book._id,
             });
-
-            console.log("After API");
-
             showToast(
                 `"${book.name}" added to "${wishlistName}"`,
                 "success"
@@ -74,18 +84,11 @@ const WishlistModal = ({
 
             onClose();
         } catch (error) {
-            console.log("Inside catch");
-            console.log(error);
             const message =
                 error instanceof Error
                     ? error.message
-                    : "Failed to add to wishlist";
-
-            console.log("Before showToast");
-
+                    : "Failed to add to wishlist"
             showToast(message, "error");
-
-            console.log("After showToast");
         }
     };
 
@@ -189,17 +192,19 @@ const WishlistModal = ({
                         />
 
                         <div className="flex justify-between items-center">
-                            <button
-                                type="button"
-                                className="flex items-center gap-2 text-gray-600"
-                                onClick={() => {
-                                    setIsCreating(false);
-                                    setNewWishlist("");
-                                }}
-                            >
-                                <FiArrowLeft />
-                                Back
-                            </button>
+                            {wishlistOptions.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsCreating(false);
+                                        setNewWishlist("");
+                                    }}
+                                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                                >
+                                    <FiArrowLeft size={18} />
+                                    Add to Existing
+                                </button>
+                            )}
 
                             <Rb_Button
                                 disabled={

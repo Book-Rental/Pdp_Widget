@@ -1,4 +1,5 @@
 export interface Wishlist {
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     books: any;
     _id: string;
     name: string;
