@@ -24,9 +24,9 @@ const BookReviews = () => {
                     Write a Review
                 </Rb_Button>
             </div>
-            <div className="mt-8 flex flex-col lg:flex-row items-start gap-8">
-                <div className="flex gap-8 shrink-0">
-                    <div className="min-w-[110px]">
+            <div className="mt-8 flex flex-col lg:!flex-row items-start gap-8">
+                <div className="flex  flex-col md:!flex-row  gap-8 shrink-0">
+                    <div className="min-w-[110px] ">
                         <Rb_Text variant="h1" className=" text-5xl font-bold">
                             4.7
                         </Rb_Text>

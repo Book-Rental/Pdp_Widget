@@ -300,7 +300,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
                 </>
             )} */}
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <div className="flex flex-col lg:!flex-row gap-3 mt-6">
                 <Rb_Button
                     onClick={handleAddToCart}
                     className="w-full flex sm:flex-1 h-11 rounded-lg bg-blue-600 text-white"

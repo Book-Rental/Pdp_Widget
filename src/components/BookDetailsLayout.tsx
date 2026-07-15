@@ -32,8 +32,8 @@ const BookDetailsLayout = () => {
     return (
         <section className="py-10">
             <div className="mx-auto max-w-5xl px-4 sm:px-6 py-6">
-                <div className="flex flex-col gap-12 lg:flex-row lg:items-start">
-                    <div className="w-full lg:w-[360px] shrink-0">
+                <div className="flex flex-col gap-12 lg:!flex-row lg:items-start">
+                    <div className="w-full lg:!w-[360px] shrink-0">
                         <BookGallery book={book} />
                     </div>
                     <div className="flex-1">
