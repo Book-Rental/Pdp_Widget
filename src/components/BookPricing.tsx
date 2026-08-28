@@ -5,15 +5,27 @@ import { BookInfoProps } from "../types/book";
 import { Rb_Button, Rb_Icon, Rb_Text, } from "@rentbook/rentbook-ui-lib";
 import { addToCart } from "../services/cartService";
 import WishlistModal from "./WishlistModal";
-import { useWishlistNames } from "../hook/useWishlistNames";
 import { useWishlistMutations } from "../hook/useWishlistMutations";
 
 const BookPricing = ({ book }: BookInfoProps) => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const [userInfo, setUserInfo] = useState(window.HOST_USER_INFO);
+
+    useEffect(() => {
+        const syncFromHost = () => setUserInfo(window.HOST_USER_INFO);
+        window.addEventListener("wishlist-state-changed", syncFromHost);
+        window.addEventListener("cart-state-changed", syncFromHost);
+        return () => {
+            window.removeEventListener("wishlist-state-changed", syncFromHost);
+            window.removeEventListener("cart-state-changed", syncFromHost);
+        };
+    }, []);
+
+    const isLoggedIn = !!userInfo;
+    const userId = userInfo?._id ?? "";
+    console.log("BookPricing userId:", userId, userInfo);
 
     const [isWishlistOpen, setIsWishlistOpen] = useState(false);
-    const [isWishlisted, setIsWishlisted] = useState(false);
-    const [wishlistId, setWishlistId] = useState("");
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
 
     const defaultRental = BOOK_CONSTANTS.RENTAL_OPTIONS.findIndex(
         (item) => item.variant === "primary"
@@ -23,39 +35,37 @@ const BookPricing = ({ book }: BookInfoProps) => {
         defaultRental >= 0 ? defaultRental : 0
     );
 
-    // const [mode, setMode] = useState<"rent" | "buy">(
-    //     book.availableForRent ? "rent" : "buy"
-    // );
+    const [wishlists, setWishlists] = useState<Record<string, string[]>>( window.HOST_WISHLISTS ?? {} );
+
+        useEffect(() => {
+        const handleWishlistStateChanged = (event: Event) => {
+            const customEvent = event as CustomEvent<Record<string, string[]>>;
+            setWishlists(customEvent.detail ?? {});
+        };
+        window.addEventListener("wishlist-state-changed", handleWishlistStateChanged);
+        return () => window.removeEventListener("wishlist-state-changed", handleWishlistStateChanged);
+        }, []);
+
+        let wishlistId: string | undefined;
+        const isWishlisted =
+        isLoggedIn &&
+        !!Object.keys(wishlists).find((id) => {
+            if (wishlists[id].includes(book._id)) {
+            wishlistId = id;
+            return true;
+            }
+            return false;
+        });
+
+        // const [mode, setMode] = useState<"rent" | "buy">(
+        //     book.availableForRent ? "rent" : "buy"
+        // );
     const mode = "rent" as const;
 
-    const activeRental =
-        BOOK_CONSTANTS.RENTAL_OPTIONS[selectedRental];
+    const activeRental = BOOK_CONSTANTS.RENTAL_OPTIONS[selectedRental];
 
-    const { data } = useWishlistNames(user._id, true);
+    const { removeBookMutation } = useWishlistMutations(userId);
 
-    const { removeBookMutation } =
-        useWishlistMutations(user._id);
-
-    useEffect(() => {
-        if (!data?.data) return;
-
-        let found = false;
-
-        for (const wishlist of data.data) {
-            const exists = wishlist.books?.some(
-                // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-                (item: any) => item.bookId === book._id
-            );
-
-            if (exists) {
-                found = true;
-                setWishlistId(wishlist._id);
-                break;
-            }
-        }
-
-        setIsWishlisted(found);
-    }, [data, book._id]);
 
     const showToast = (
         message: string,
@@ -72,6 +82,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
     };
 
     const handleAddToCart = async () => {
+        setIsAddingToCart(true);
         try {
             await addToCart({
                 bookId: book._id,
@@ -92,9 +103,15 @@ const BookPricing = ({ book }: BookInfoProps) => {
                 "error"
             );
         }
+        finally {
+            setIsAddingToCart(false); 
+        }
     };
 
+    
+
     const handleRemoveWishlist = async () => {
+        if (!wishlistId) return;
         try {
             await removeBookMutation.mutateAsync({
                 wishlistId,
@@ -106,7 +123,6 @@ const BookPricing = ({ book }: BookInfoProps) => {
                 "success"
             );
 
-            setIsWishlisted(false);
         } catch (error) {
             showToast(
                 error instanceof Error
@@ -303,6 +319,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
             <div className="flex flex-col lg:!flex-row gap-3 mt-6">
                 <Rb_Button
                     onClick={handleAddToCart}
+                    disabled={isAddingToCart}
                     className="w-full flex sm:flex-1 h-11 rounded-lg bg-blue-600 text-white"
                 >
                     <Rb_Icon
@@ -316,6 +333,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
 
                 <Rb_Button
                     variant="outline"
+                    disabled={removeBookMutation.isPending}
                     onClick={() => {
                         if (isWishlisted) {
                             handleRemoveWishlist();
@@ -337,7 +355,7 @@ const BookPricing = ({ book }: BookInfoProps) => {
                     setIsWishlistOpen(false);
                 }}
                 book={book}
-                userId={user._id}
+                userId={userId}
             />
         </>
     );
