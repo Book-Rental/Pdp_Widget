@@ -1,31 +1,30 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import BookPricing from "../components/BookPricing";
 import { Book } from "../types/book";
-import { useWishlistNames } from "../hook/useWishlistNames";
 
-const { mockAddToCart, mockMutateAsync } = vi.hoisted(() => ({
+const {
+  mockAddToCart,
+  mockMutateAsync,
+  mockRemoveMutation,
+} = vi.hoisted(() => ({
   mockAddToCart: vi.fn(),
   mockMutateAsync: vi.fn(),
+  mockRemoveMutation: {
+    mutateAsync: vi.fn(),
+    isPending: false,
+  },
 }));
 
 vi.mock("../services/cartService", () => ({
   addToCart: mockAddToCart,
 }));
 
-vi.mock("../hook/useWishlistNames", () => ({
-  useWishlistNames: vi.fn(),
-}));
-
-const mockedUseWishlistNames = vi.mocked(useWishlistNames);
-
 vi.mock("../hook/useWishlistMutations", () => ({
   useWishlistMutations: vi.fn(() => ({
-    removeBookMutation: {
-      mutateAsync: mockMutateAsync,
-    },
+    removeBookMutation: mockRemoveMutation,
   })),
 }));
 
@@ -69,35 +68,39 @@ const mockBook: Book = {
 };
 
 const renderWithQueryClient = (ui: React.ReactElement) => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
 
   return render(
-    <QueryClientProvider client={queryClient}>
-      {ui}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
   );
 };
 
-beforeEach(() => {
-  vi.clearAllMocks();
-
-  localStorage.setItem(
-    "user",
-    JSON.stringify({
-      _id: "user1",
-    })
-  );
-
-  mockedUseWishlistNames.mockReturnValue({
-    data: {
-      data: [],
-    },
-     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-  } as any);
-});
+const setHostState = (
+  userInfo: { _id: string } | undefined = { _id: "user1" },
+  wishlists: Record<string, string[]> = {}
+) => {
+  window.HOST_USER_INFO = userInfo;
+  window.HOST_WISHLISTS = wishlists;
+};
 
 describe("BookPricing", () => {
-  it("renders Rent tab by default", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockRemoveMutation.mutateAsync = mockMutateAsync;
+    mockRemoveMutation.isPending = false;
+
+    setHostState({ _id: "user1" }, {});
+  });
+
+  afterEach(() => {
+    window.HOST_USER_INFO = undefined;
+    window.HOST_WISHLISTS = {};
+  });
+
+  it("renders rental pricing information", () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
     expect(screen.getByText("Rental Price")).toBeInTheDocument();
@@ -105,7 +108,7 @@ describe("BookPricing", () => {
     expect(screen.getByText("Select Rental Duration")).toBeInTheDocument();
   });
 
-  it("renders Add To Cart button", () => {
+  it("renders Add to Cart button", () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
     expect(
@@ -113,7 +116,7 @@ describe("BookPricing", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Add to Wishlist button", () => {
+  it("renders Add to Wishlist button when book is not wishlisted", () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
     expect(
@@ -121,7 +124,17 @@ describe("BookPricing", () => {
     ).toBeInTheDocument();
   });
 
-  it("changes rental duration", () => {
+  it("renders Remove from Wishlist button when book is already wishlisted", () => {
+    setHostState({ _id: "user1" }, { wishlist1: ["1"] });
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    expect(
+      screen.getByRole("button", { name: /remove from wishlist/i })
+    ).toBeInTheDocument();
+  });
+
+  it("changes rental duration when a duration is selected", () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
     fireEvent.click(screen.getByText("30 Days"));
@@ -129,121 +142,111 @@ describe("BookPricing", () => {
     expect(screen.getAllByText("₹300")).toHaveLength(2);
   });
 
-  it("shows availability", () => {
+  it("displays book availability", () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
     expect(screen.getByText("Available")).toBeInTheDocument();
   });
 
-  it("renders only rent section when sale is unavailable", () => {
+  it("does not render rental section when rent is unavailable", () => {
     renderWithQueryClient(
-      <BookPricing
-        book={{
-          ...mockBook,
-          availableForRent: true,
-          availableForSale: false,
-        }}
-      />
+      <BookPricing book={{ ...mockBook, availableForRent: false }} />
     );
 
-    expect(screen.getByText("Rental Price")).toBeInTheDocument();
-    expect(screen.queryByText("Purchase Price")).not.toBeInTheDocument();
+    expect(screen.queryByText("Rental Price")).not.toBeInTheDocument();
+    expect(screen.queryByText("Select Rental Duration")).not.toBeInTheDocument();
   });
 
-  it("adds item to cart successfully", async () => {
-    mockAddToCart.mockResolvedValue({});
+  it("adds book to cart successfully", async () => {
+    mockAddToCart.mockResolvedValueOnce({});
 
-    const toastSpy = vi.spyOn(window, "dispatchEvent");
+    const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
 
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /add to cart/i,
+    fireEvent.click(screen.getByRole("button", { name: /add to cart/i }));
+
+    await waitFor(() => {
+      expect(mockAddToCart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bookId: "1",
+          quantity: 1,
+          pricingMode: "rent",
+        })
+      );
+    });
+
+    expect(dispatchEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "app-toast-notification" })
+    );
+  });
+
+  it("disables Add to Cart button while the request is in flight", async () => {
+    let resolvePromise: () => void;
+    mockAddToCart.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolvePromise = resolve;
       })
     );
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    const button = screen.getByRole("button", { name: /add to cart/i });
+    fireEvent.click(button);
+
+    await waitFor(() => expect(button).toBeDisabled());
+
+    resolvePromise!();
+
+    await waitFor(() => expect(button).not.toBeDisabled());
+  });
+
+  it("shows error toast when adding book to cart fails", async () => {
+    mockAddToCart.mockRejectedValueOnce(new Error("Failed to add item"));
+
+    const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /add to cart/i }));
 
     await waitFor(() => {
       expect(mockAddToCart).toHaveBeenCalled();
     });
 
-    expect(toastSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "app-toast-notification",
-      })
+    expect(dispatchEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "app-toast-notification" })
     );
   });
 
-  it("shows error toast when add to cart fails", async () => {
-    mockAddToCart.mockRejectedValue(new Error("Failed"));
-
-    const toastSpy = vi.spyOn(window, "dispatchEvent");
-
+  it("opens wishlist modal when Add to Wishlist is clicked", () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /add to cart/i,
-      })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /add to wishlist/i }));
 
-    await waitFor(() => {
-      expect(mockAddToCart).toHaveBeenCalled();
-    });
-
-    expect(toastSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "app-toast-notification",
-      })
-    );
+    expect(screen.getByText("Wishlist Modal")).toBeInTheDocument();
   });
 
-  it("shows remove from wishlist button when book is already wishlisted", async () => {
-    mockedUseWishlistNames.mockReturnValue({
-      data: {
-        data: [
-          {
-            _id: "wishlist1",
-            books: [{ bookId: "1" }],
-          },
-        ],
-      },
-       // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    } as any);
-
+  it("closes wishlist modal", () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
-    expect(
-      await screen.findByRole("button", {
-        name: /remove from wishlist/i,
-      })
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /add to wishlist/i }));
+    expect(screen.getByText("Wishlist Modal")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /close modal/i }));
+    expect(screen.queryByText("Wishlist Modal")).not.toBeInTheDocument();
   });
 
   it("removes book from wishlist successfully", async () => {
-    mockedUseWishlistNames.mockReturnValue({
-      data: {
-        data: [
-          {
-            _id: "wishlist1",
-            books: [{ bookId: "1" }],
-          },
-        ],
-      },
-       // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    } as any);
+    setHostState({ _id: "user1" }, { wishlist1: ["1"] });
 
-    mockMutateAsync.mockResolvedValue({});
+    mockMutateAsync.mockResolvedValueOnce({});
 
-    const toastSpy = vi.spyOn(window, "dispatchEvent");
+    const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
 
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: /remove from wishlist/i,
-      })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /remove from wishlist/i }));
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -252,68 +255,165 @@ describe("BookPricing", () => {
       });
     });
 
-    expect(toastSpy).toHaveBeenCalled();
+    expect(dispatchEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "app-toast-notification" })
+    );
   });
 
-  it("shows error toast when removing wishlist fails", async () => {
-    mockedUseWishlistNames.mockReturnValue({
-      data: {
-        data: [
-          {
-            _id: "wishlist1",
-            books: [{ bookId: "1" }],
-          },
-        ],
-      },
-       // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    } as any);
+  it("shows error toast when removing book from wishlist fails", async () => {
+    setHostState({ _id: "user1" }, { wishlist1: ["1"] });
 
-    mockMutateAsync.mockRejectedValue(new Error("Failed"));
+    mockMutateAsync.mockRejectedValueOnce(new Error("Failed to remove from wishlist"));
 
-    const toastSpy = vi.spyOn(window, "dispatchEvent");
+    const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
 
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: /remove from wishlist/i,
-      })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /remove from wishlist/i }));
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalled();
     });
 
-    expect(toastSpy).toHaveBeenCalled();
+    expect(dispatchEventSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "app-toast-notification" })
+    );
   });
 
-  it("opens wishlist modal when book is not wishlisted", () => {
+  it("disables wishlist button while removal is pending", () => {
+    mockRemoveMutation.isPending = true;
+    setHostState({ _id: "user1" }, { wishlist1: ["1"] });
+
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /add to wishlist/i,
-      })
-    );
-    expect(screen.getByText("Wishlist Modal")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /remove from wishlist/i })
+    ).toBeDisabled();
   });
 
-  it("closes wishlist modal", () => {
+  it("updates wishlist button when wishlist-state-changed event is dispatched", async () => {
     renderWithQueryClient(<BookPricing book={mockBook} />);
 
-    // Open modal
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /add to wishlist/i,
+    expect(
+      screen.getByRole("button", { name: /add to wishlist/i })
+    ).toBeInTheDocument();
+
+    fireEvent(
+      window,
+      new CustomEvent("wishlist-state-changed", {
+        detail: { wishlist1: ["1"] },
       })
     );
 
-    expect(screen.getByText("Wishlist Modal")).toBeInTheDocument();
-
-    // Close modal
-    fireEvent.click(screen.getByText("Close Modal"));
-
-    // Modal should disappear
-    expect(screen.queryByText("Wishlist Modal")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /remove from wishlist/i })
+      ).toBeInTheDocument();
+    });
   });
+
+  it("does not crash when wishlist-state-changed fires without a detail payload", async () => {
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    // No detail at all — this used to crash with
+    // "Cannot convert undefined or null to object" before the `?? {}` guard.
+    fireEvent(window, new CustomEvent("wishlist-state-changed"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /add to wishlist/i })
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("updates user info after a host state event", async () => {
+    setHostState(undefined, {});
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    expect(
+      screen.getByRole("button", { name: /add to wishlist/i })
+    ).toBeInTheDocument();
+
+    window.HOST_USER_INFO = { _id: "user2" };
+
+    fireEvent(
+      window,
+      new CustomEvent("wishlist-state-changed", {
+        detail: { wishlist2: ["1"] },
+      })
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /remove from wishlist/i })
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("does not mark the book as wishlisted when other wishlists exist without this book", () => {
+    setHostState({ _id: "user1" }, { wishlist1: ["999"] });
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    expect(
+        screen.getByRole("button", { name: /add to wishlist/i })
+    ).toBeInTheDocument();
+    expect(
+        screen.queryByRole("button", { name: /remove from wishlist/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("falls back to an empty wishlist map when HOST_WISHLISTS is undefined", () => {
+    window.HOST_USER_INFO = { _id: "user1" };
+    window.HOST_WISHLISTS = undefined as unknown as Record<string, string[]>;
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    expect(
+        screen.getByRole("button", { name: /add to wishlist/i })
+    ).toBeInTheDocument();
+  });
+
+  it("shows fallback error message when add to cart fails with a non-Error value", async () => {
+    mockAddToCart.mockRejectedValueOnce("network down");
+
+    const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /add to cart/i }));
+
+    await waitFor(() => {
+        expect(dispatchEventSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: "app-toast-notification",
+                detail: expect.objectContaining({ message: "Failed to add item" }),
+            })
+        );
+    });
+  });
+
+  it("shows fallback error message when removing from wishlist fails with a non-Error value", async () => {
+    setHostState({ _id: "user1" }, { wishlist1: ["1"] });
+    mockMutateAsync.mockRejectedValueOnce("network down");
+
+    const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
+
+    renderWithQueryClient(<BookPricing book={mockBook} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /remove from wishlist/i }));
+
+    await waitFor(() => {
+        expect(dispatchEventSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: "app-toast-notification",
+                detail: expect.objectContaining({
+                    message: "Failed to remove from wishlist",
+                }),
+            })
+        );
+    });
+  });
+
 });

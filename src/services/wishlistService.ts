@@ -6,7 +6,7 @@ export const getWishlistNames = async (
     userId: string
 ): Promise<WishlistResponse> => {
     const response = await fetch(
-        `${API_URL}/api/wishList/getAllWishList/${userId}`,
+        `${API_URL}/api/wishList/wishlistName/${userId}`,
         {
             credentials: "include",
         }
@@ -18,20 +18,10 @@ export const getWishlistNames = async (
         throw new Error(result.message);
     }
 
-    return {
-        ...result,
-        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-        data: result.data.map((item: any) => ({
-            _id: item.wishlistId,
-            name: item.wishlistName,
-            books: item.books,
-        })),
-    };
+    return result;
+
 };
 
-/**
- * Add book to wishlist
- */
 export const addBookToWishlist = async (
     payload: AddToWishlistPayload
 ) => {
